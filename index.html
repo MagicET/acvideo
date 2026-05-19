@@ -60,8 +60,17 @@
         let currentEl = null;
         let nextEl = null;
 
-        function rand(min, max) { return Math.random() * (max - min) + min; }
+        const maxHistoryCount = 6;
+        let history = [];
+
+
+        function randFloat(min, max) { return Math.random() * (max - min) + min; }
         function randInt(min, max) { return Math.floor(Math.random() * (max - min) + min); }
+        function randVideoIndex(min, max) {
+            while (true) {
+                if (!history.includes(i = randInt(min, max))) return i;
+            }
+        }
 
         function updateStatus(text){ status.textContent = text; }
 
@@ -71,15 +80,17 @@
 
         // 全ファイルを事前に読み込む（hidden video 要素を作る）
         function loadElement(i){
-                const v = document.createElement('video');
+            history.push(i);
+            if (history.length >= maxHistoryCount + 1) history.shift();
+            const v = document.createElement('video');
             v.src = videoFiles[i%videoFiles.length];
-                v.preload = 'auto';
-                v.playsInline = true;
+            v.preload = 'auto';
+            v.playsInline = true;
             v.controls = false; // 非表示
-                v.style.display = 'none';
-                v.style.width = '100%';
-                v.setAttribute('webkit-playsinline', '');
-                container.appendChild(v);
+            v.style.display = 'none';
+            v.style.width = '100%';
+            v.setAttribute('webkit-playsinline', '');
+            container.appendChild(v);
             try { v.load(); } catch(e) { console.log(e) };
                 v.addEventListener('canplaythrough', () => {
                     console.log(`${index} ロードされたファイル: ${v.src}`);
@@ -91,19 +102,19 @@
             if(!running) return;
             const minSec = Math.max(0.1, parseFloat(minSecInput.value) || 1);
             const maxSec = Math.max(minSec, parseFloat(maxSecInput.value) || (minSec + 3));
-            const segLen = rand(minSec, maxSec);
+            const segLen = randFloat(minSec, maxSec);
 
             updateStatus(`再生準備: ${currentEl.src}`);
             console.log(`${index} 再生準備: ${currentEl.src}`);
 
             // metadata を待つ
-            if (!isFinite(currentEl.duration) || currentEl.duration === 0){
+            /*if (!isFinite(currentEl.duration) || currentEl.duration === 0){
                 await waitForEvent(currentEl, 'loadedmetadata');
-            }
+            }*/
 
             const dur = currentEl.duration || 0;
             const maxStart = Math.max(0, dur - segLen);
-            const startTime = dur > segLen ? rand(0, maxStart) : 0;
+            const startTime = dur > segLen ? randFloat(0, maxStart) : 0;
             const lastingDuration = Math.min(segLen, Math.max(0.05, dur - startTime));
             
 
@@ -138,7 +149,7 @@
             index += 1;
             previousEl = currentEl;
             currentEl = nextEl;
-            if (orderSel.value === 'shuffle') nextEl = loadElement(randInt(0, videoFiles.length));
+            if (orderSel.value === 'shuffle') nextEl = loadElement(randVideoIndex(0, videoFiles.length));
             else nextEl = loadElement(index + 1);
             console.log(`${index} nextSegment: ${index}`);
             try { nextEl.load(); } catch(e) { console.log(e) };
@@ -156,9 +167,11 @@
             index = 0;
             // 既に要素があれば消す
             container.innerHTML = '';
+            history = [];
+            previousEl = null;
             if (orderSel.value === 'shuffle') {
-                currentEl = loadElement(randInt(0, videoFiles.length));
-                nextEl = loadElement(randInt(0, videoFiles.length));
+                currentEl = loadElement(randVideoIndex(0, videoFiles.length));
+                nextEl = loadElement(randVideoIndex(0, videoFiles.length));
             } else {
                 currentEl = loadElement(index);
                 nextEl = loadElement(index + 1);
@@ -167,6 +180,8 @@
         });
 
         startBtn.addEventListener('click', async ()=>{
+            clearTimeout(currentTimer);
+            currentTimer = undefined;
             if(running) return;
             running = true;
             updateStatus('開始します...');
