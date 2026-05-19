@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Procedural Cutter</title>
+    <title>Assignment for A&C</title>
     <style>
         body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; padding: 20px; }
         /* 非フルスクリーン時のコンテナ */
@@ -19,17 +19,18 @@
     </style>
 </head>
 <body>
-    <h2>Procedural Cutter — ランダム区間で繋げる再生</h2>
+    <h2>Anxiety</h2>
     <div id="videoContainer"></div>
 
     <div class="controls">
         <label>最小長(s): <input id="minSec" type="number" value="2" min="0.1" step="0.1"></label>
         <label>最大長(s): <input id="maxSec" type="number" value="6" min="0.1" step="0.1"></label>
+        <label>終了時間(s): <input id="fullDuration" type="number" value="300" min="1" step="30"></label>
+        <label>順序: <select id="order"><option value="sequential">連続</option><option value="shuffle">シャッフル</option></select></label>
         <button id="loadBtn">ロード</button>
         <button id="startBtn">開始</button>
         <button id="stopBtn">停止</button>
         <button id="fsBtn">全画面</button>
-        <label>順序: <select id="order"><option value="sequential">連続</option><option value="shuffle">シャッフル</option></select></label>
     </div>
 
     <div id="status">ロードしてください</div>
@@ -38,7 +39,7 @@
         // ファイル一覧 — 同じフォルダに置いてください
         const videoFiles = [
             //'IMG_3043.MOV','IMG_3044.MOV','IMG_3045.MOV','IMG_3046.MOV','IMG_3047.MOV','IMG_3048.MOV','IMG_3049.MOV','IMG_3050.MOV','IMG_3051.MOV'
-            'https://res.cloudinary.com/dgiovkmex/video/upload/v1779159700/IMG_3048_mpsm3p.mov','https://res.cloudinary.com/dgiovkmex/video/upload/v1779159693/IMG_3051_hcslsj.mov','https://res.cloudinary.com/dgiovkmex/video/upload/v1779159679/IMG_3047_ewwzdr.mov','https://res.cloudinary.com/dgiovkmex/video/upload/v1779159585/IMG_3044_a8fkpl.mov','https://res.cloudinary.com/dgiovkmex/video/upload/v1779159568/IMG_3043_spylmy.mov','https://res.cloudinary.com/dgiovkmex/video/upload/v1779159565/IMG_3045_jxr8sh.mov','https://res.cloudinary.com/dgiovkmex/video/upload/v1779159428/IMG_3050_gpy4mw.mov'
+            'https://res.cloudinary.com/dgiovkmex/video/upload/v1779190228/IMG_3046_hktnha.mp4','https://res.cloudinary.com/dgiovkmex/video/upload/v1779190227/IMG_3049_zupwjx.mp4','https://res.cloudinary.com/dgiovkmex/video/upload/v1779190225/IMG_3043_nfntir.mp4','https://res.cloudinary.com/dgiovkmex/video/upload/v1779190224/IMG_3048_frcnzp.mp4' ,'https://res.cloudinary.com/dgiovkmex/video/upload/v1779190222/IMG_3047_ra9ll8.mp4','https://res.cloudinary.com/dgiovkmex/video/upload/v1779190221/IMG_3044_zw70yt.mp4','https://res.cloudinary.com/dgiovkmex/video/upload/v1779190221/IMG_3045_dzdm3h.mp4','https://res.cloudinary.com/dgiovkmex/video/upload/v1779190221/IMG_3051_bj9xko.mp4','https://res.cloudinary.com/dgiovkmex/video/upload/v1779190220/IMG_3050_yigyev.mp4'   
         ];
 
         const container = document.getElementById('videoContainer');
@@ -74,31 +75,20 @@
                 v.src = src;
                 v.preload = 'auto';
                 v.playsInline = true;
-                v.controls = false; // 非表示
+                //v.controls = false; // 非表示
                 v.style.display = 'none';
                 v.style.width = '100%';
                 v.setAttribute('webkit-playsinline', '');
-                // イベントハンドラ（各要素ごと）
-                /*v.addEventListener('timeupdate', ()=>{
-                    if(!running || currentEl !== v) return;
-                    if(v.currentTime >= targetTime - 0.05){
-                        v.pause();
-                        setTimeout(()=>{ nextSegment(); }, 50);
-                    }
-                });
-                v.addEventListener('ended', ()=>{
-                    if(!running) return;
-                    setTimeout(()=>{ nextSegment(); }, 50);
-                });*/
                 container.appendChild(v);
                 // 明示的にロードを呼ぶ
-                try{ v.load(); }catch(e){console.log(e)}
-                v.addEventListener('loadeddata', () => {
+                //try{ v.load(); }catch(e){console.log(e)}
+                v.addEventListener('canplaythrough', () => {
                     loadedFileCount += 1;
                     updateStatus("ロードされたファイル：" + loadedFileCount + "/" + videoFiles.length);
                 })
                 return v;
             });
+            videoEls[0].load();
         }
 
         async function loadAndPlayCurrent(flag = "unknown"){
@@ -133,6 +123,8 @@
 
             await el.play();
 
+            if(currentEl) try { currentEl.pause(); } catch(e) {};
+
             // 表示切替：現在の要素を隠し、新しい要素を表示
             if(currentEl && currentEl !== el){
                 currentEl.style.display = 'none';
@@ -157,7 +149,13 @@
             // 次のインデックス
             index = (index + 1) % playlist.length;
             console.log("nextSegment: ", index);
+            videoEls[(index + 1) % playlist.length].load()
             await loadAndPlayCurrent("nextSegment");
+        }
+
+        function stop() {
+            running = false;
+            if(currentEl) try { currentEl.pause(); } catch(e) {}
         }
 
         // (timeupdate/ended イベントは各 preloaded 要素に登録済み)
@@ -178,11 +176,14 @@
             running = true;
             updateStatus('開始します...');
             await loadAndPlayCurrent("startBtn");
+            setTimeout(() => {
+                stop();
+                updateStatus("終了しました");
+            }, fullDuration.value * 1000)
         });
 
         stopBtn.addEventListener('click', ()=>{
-            running = false;
-            if(currentEl) try{ currentEl.pause(); }catch(e){}
+            stop();
             updateStatus('停止しました');
         });
 
