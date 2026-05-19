@@ -45,6 +45,7 @@
         const container = document.getElementById('videoContainer');
         const minSecInput = document.getElementById('minSec');
         const maxSecInput = document.getElementById('maxSec');
+        const loadBtn = document.getElementById('loadBtn');
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
         const fsBtn = document.getElementById('fsBtn');
@@ -69,9 +70,9 @@
         function waitForEvent(el, ev){ return new Promise(resolve => { const fn = () => { el.removeEventListener(ev, fn); resolve(); }; el.addEventListener(ev, fn); }); }
 
         // 全ファイルを事前に読み込む（hidden video 要素を作る）
-        function loadElement(index){
+        function loadElement(i){
                 const v = document.createElement('video');
-            v.src = videoFiles[index%videoFiles.length];
+            v.src = videoFiles[i%videoFiles.length];
                 v.preload = 'auto';
                 v.playsInline = true;
             v.controls = false; // 非表示
@@ -81,7 +82,7 @@
                 container.appendChild(v);
             try { v.load(); } catch(e) { console.log(e) };
                 v.addEventListener('canplaythrough', () => {
-                updateStatus("ロードされたファイル: " + v.src);
+                    console.log(`${index} ロードされたファイル: ${v.src}`);
                 })
                 return v;
         }
@@ -93,6 +94,7 @@
             const segLen = rand(minSec, maxSec);
 
             updateStatus(`再生準備: ${currentEl.src}`);
+            console.log(`${index} 再生準備: ${currentEl.src}`);
 
             // metadata を待つ
             if (!isFinite(currentEl.duration) || currentEl.duration === 0){
@@ -103,17 +105,13 @@
             const maxStart = Math.max(0, dur - segLen);
             const startTime = dur > segLen ? rand(0, maxStart) : 0;
             const lastingDuration = Math.min(segLen, Math.max(0.05, dur - startTime));
-
             
-            console.log("before seek and play", Date.now());
 
-            console.log(`再生: ${currentEl.src} — 開始 ${startTime.toFixed(2)}s / 長さ ${(lastingDuration).toFixed(2)}s`)
+            console.log(`${index} 再生: ${currentEl.src} — 開始 ${startTime.toFixed(2)}s / 長さ ${(lastingDuration).toFixed(2)}s`)
 
             try{ currentEl.currentTime = startTime; } catch(e){}
             await waitForEvent(currentEl, 'seeked');
             updateStatus(`再生: ${currentEl.src} — 開始 ${startTime.toFixed(2)}s / 長さ ${(lastingDuration).toFixed(2)}s`);
-
-            console.log("after seek", Date.now());
 
             await currentEl.play();
 
@@ -124,8 +122,6 @@
             if(previousEl && previousEl !== currentEl){
                 previousEl.remove();
             }
-
-            console.log("after play", Date.now());
 
             if (currentTimer == undefined) {
                 currentTimer = setTimeout(() => {
@@ -144,7 +140,7 @@
             currentEl = nextEl;
             if (orderSel.value === 'shuffle') nextEl = loadElement(randInt(0, videoFiles.length));
             else nextEl = loadElement(index + 1);
-            console.log("nextSegment: ", index);
+            console.log(`${index} nextSegment: ${index}`);
             try { nextEl.load(); } catch(e) { console.log(e) };
             await loadAndPlayCurrent("nextSegment");
         }
@@ -167,7 +163,7 @@
                 currentEl = loadElement(index);
                 nextEl = loadElement(index + 1);
             }
-            updateStatus('ロードしています');
+            updateStatus('開始してください');
         });
 
         startBtn.addEventListener('click', async ()=>{
@@ -179,6 +175,7 @@
             setTimeout(() => {
                 stop();
                 updateStatus("終了しました");
+                console.log("終了しました")
             }, fullDuration.value * 1000)
             }
             
