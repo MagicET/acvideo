@@ -24,7 +24,7 @@
 
     <div class="controls">
         <label>最小長(%): <input id="minRange" type="number" value="10" min="1" step="1"></label>
-        <label>最大長(%): <input id="maxRange" type="number" value="100" min="2" step="1"></label>
+        <label>最大長(%): <input id="maxRange" type="number" value="80" min="2" step="1"></label>
         <label>終了時間(s) (0または空欄で無限): <input id="fullDuration" type="number" value="0" min="1" step="30"></label>
         <label>順序: <select id="order"><option value="shuffle">シャッフル</option><option value="sequential">連続</option></select></label>
         <button id="loadBtn">ロード</button>
@@ -49,7 +49,10 @@
             'https://res.cloudinary.com/dgiovkmex/video/upload/c_crop,g_north,h_3460,w_1946/a_-90/v1779193621/IMG_3044_X_w2hafg.mp4',
             'https://res.cloudinary.com/dgiovkmex/video/upload/v1779193619/799829821.611463_X_skmxys.mp4',
             'https://res.cloudinary.com/dgiovkmex/video/upload/v1779193618/799829821.677341_X_jwvuxi.mp4',
-            'https://res.cloudinary.com/dgiovkmex/video/upload/v1779193618/799829821.644678_X_l9xubs.mp4'    
+            'https://res.cloudinary.com/dgiovkmex/video/upload/v1779193618/799829821.644678_X_l9xubs.mp4',
+            'https://res.cloudinary.com/dgiovkmex/video/upload/so_5.4,eo_17/a_-90/v1779268662/IMG_3688_X_evs5sa.mp4',
+            'https://res.cloudinary.com/dgiovkmex/video/upload/so_2.2,eo_33/v1779268663/IMG_3689_X_zkrrh5.mp4',
+            'https://res.cloudinary.com/dgiovkmex/video/upload/so_5.2,eo_30/v1779268662/IMG_3690_X_mga6xy.mp4'   
         ];
         const sameAngles = [[1,4], [3,7], [9,10]];
 
@@ -132,7 +135,9 @@
             updateStatus(`再生準備: ${currentEl.src}`);
             console.log(`${index} 再生準備: ${currentEl.src}`);
 
-            const dur = currentEl.duration || 0;
+            waitForEvent(currentEl)
+
+            const dur = currentEl.duration || 5;
 
             const minSec = Math.max(0.1, dur * parseFloat(minRangeInput.value)/100 || 0.1);
             const maxSec = Math.max(minSec, dur * parseFloat(maxRangeInput.value)/100 || (minSec + 0.1));
@@ -140,7 +145,7 @@
 
             const maxStart = Math.max(0, dur - segLen);
             const startTime = dur > segLen ? randFloat(0, maxStart) : 0;
-            const lastingDuration = Math.min(segLen, Math.max(0.05, dur - startTime));
+            const lastingDuration = Math.min(segLen, Math.max(0.1, dur - startTime));
             
 
             console.log(`${index} 再生: ${currentEl.src} — 開始 ${startTime.toFixed(2)}s / 長さ ${(lastingDuration).toFixed(2)}s / 総時間 ${dur.toFixed(2)}`)
