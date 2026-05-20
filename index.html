@@ -104,11 +104,6 @@
             updateStatus(`再生準備: ${currentEl.src}`);
             console.log(`${index} 再生準備: ${currentEl.src}`);
 
-            // metadata を待つ
-            /*if (!isFinite(currentEl.duration) || currentEl.duration === 0){
-                await waitForEvent(currentEl, 'loadedmetadata');
-            }*/
-
             const dur = currentEl.duration || 0;
 
             const minSec = Math.max(0.1, dur * parseFloat(minRangeInput.value)/100 || 0.1);
@@ -120,15 +115,17 @@
             const lastingDuration = Math.min(segLen, Math.max(0.05, dur - startTime));
             
 
-            console.log(`${index} 再生: ${currentEl.src} — 開始 ${startTime.toFixed(2)}s / 長さ ${(lastingDuration).toFixed(2)}s`)
+            console.log(`${index} 再生: ${currentEl.src} — 開始 ${startTime.toFixed(2)}s / 長さ ${(lastingDuration).toFixed(2)}s / 総時間 ${dur.toFixed(2)}`)
 
             try{ currentEl.currentTime = startTime; } catch(e){}
             await waitForEvent(currentEl, 'seeked');
-            updateStatus(`再生: ${currentEl.src} — 開始 ${startTime.toFixed(2)}s / 長さ ${(lastingDuration).toFixed(2)}s`);
+            updateStatus(`再生: ${currentEl.src} — 開始 ${startTime.toFixed(2)}s / 長さ ${lastingDuration.toFixed(2)}s / 総時間 ${dur.toFixed(2)}`);
 
-            await currentEl.play();
+            try { await currentEl.play(); } catch(e) { console.log(e); }
 
-            if(previousEl) try { previousEl.pause(); } catch(e) {};
+            console.log("Successfully played");
+
+            if(previousEl) try { previousEl.pause(); } catch(e) { console.log(e); };
 
             // 表示切替：現在の要素を隠し、新しい要素を表示
             currentEl.style.display = 'block';
